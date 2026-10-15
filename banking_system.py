@@ -31,7 +31,7 @@ menu=[
 ]
 choice= st.sidebar.selectbox('Select Module',menu)
 
-# 1.Customer Registration
+ # 1.Customer Registration
 if choice =="Customer Registration":
     st.subheader('Customer Registration')  #display the heading
 
@@ -61,3 +61,41 @@ if choice =="Customer Registration":
             st.write('Name:',name.strip())
             st.write('Phone:',phone)
             st.write('Email:',email.strip())
+
+ # 2.Account Creation
+elif choice == "Account Creation":
+    st.subheader('Account Creation')
+
+    #get customer id
+    customer_id=st.number_input(
+        "Enter Customer ID:",
+        min_value=1, #set the minimum vlaue to 1
+        step=1 # + or - by 1
+    )
+
+    #select account type
+    account_type=st.selectbox(
+        "Select Account Type:",
+        ["Savings Account","Current Account"] #provide account options
+    )
+
+    #get initial deposit amount
+    initial_deposit=st.number_input(
+        "Enter Initial Deposit Amount(₹):",
+        min_value=0.0, #allow zero as the minimum deposit
+        step=500.0 # + or - by 500
+    )
+
+    #create bank account
+    if st.button('Create Account'):
+
+        if initial_deposit <1000:
+            st.error('Initial deposit must be at least ₹1,000.')
+        else:
+            st.success('Account created successflly!')
+
+            st.write('### Account Details')
+            st.write('Customer ID:',int(customer_id))
+            st.write('Account Type:',account_type)
+            st.write('Initial Deposit:',f'₹{initial_deposit:,.2f}')
+            
