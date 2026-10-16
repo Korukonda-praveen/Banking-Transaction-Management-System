@@ -137,6 +137,105 @@ elif choice=='Deposit':
             st.write('### Deposit Details')
             st.write('Customer ID:',int(customer_id))
             st.write('Deposit Amount:',f'₹{deposit_amount:,.2f}')
+# 4 Withdrawal
+elif choice == "Withdrawal":
+    st.header('Withdrawal')
+
+    # get customer id
+    customer_id=st.number_input(
+    "Enter Customer ID:",
+    min_value=1,
+    step=1
+    )
+
+    # Get withdrawal amount
+    withdrawal_amount = st.number_input(
+        "Enter Withdrawal Amount (₹):",
+        min_value=0.0,
+        step=500.0
+    )
+
+    # Withdrawal money
+    if st.button('Withdraw Money'):
+
+        if withdrawal_amount<=0:
+            st.error('Withdrawal amount must be greater than ₹0.')
+        else:
+            st.success('Withdrawal details submitted successfully!')
+
+            st.write('### Withdrawal Details')
+            st.write('Customer ID:',int(customer_id))
+            st.write('Withdrawal Amount:'f'₹{withdrawal_amount:,.2f}')
+
+# 5 Fund Transfer
+elif choice =='Fund Transfer':
+    st.header('Fund Transfer')
+    errors=[]
+
+    #get sender customer id
+    sender_id=st.number_input(
+        'Enter Sender Customer ID:',
+        min_value=1,
+        step=1
+    )
+    # Get receiver customer ID
+    receiver_id = st.number_input(
+        "Enter Receiver Customer ID:",
+        min_value=1,
+        step=1
+    )
+    # get transfer amount
+    transfer_amount=st.number_input(
+        'Enter Transfer Amount (₹):',
+        min_value=0.0,
+        step=500.0
+    )
+
+    # transfer money
+    if st.button('Transfer Money'):
+
+        if sender_id == receiver_id:
+            errors.append('Sender and receiver Ids must be different.')
+
+        if transfer_amount<=0:
+            errors.append('Transfer amount must be greater then ₹0.')
+
+        if errors:
+            for error in errors:
+                st.error(error)
+        
+        else:
+            st.success('Transfer details submitted successfully!')
+
+
+            st.write('### Transfer Details')
+            st.write('Sender Customer ID:',int(sender_id))
+            st.write('Receiver Customer ID:',int(receiver_id))
+            st.write('Transfer Amount:',f'₹{transfer_amount:,.2f}')
+
+# 6 Balance Enquiry
+elif choice== 'Balance Enquiry':
+    st.subheader('Balance Enquiry')
+
+    # get customer id
+    customer_id = st.number_input(
+    "Enter Customer ID:",
+    min_value=1,
+    step=1
+)
+
+    # Check account balance
+    if st.button('Check Balance'):
+
+        st.success('Balance enquiry submitted successfully!')
+
+        st.write('### Account Details')
+        st.write('Customer ID:',int(customer_id))
+
+        st.info(
+        "The actual account balance will be displayed "
+        "when we connect the banking logic."
+        )
 
 
 
