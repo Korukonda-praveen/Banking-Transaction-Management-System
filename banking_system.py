@@ -20,6 +20,7 @@ st.title("🏦 Banking Transaction Management System") # Create a bank object if
 # bank=st.session_state.bank # Get the existing bank object
 
 menu=[
+    "Home",
     "Customer Registration",
     "Account Creation",
     "Deposit",
@@ -30,6 +31,15 @@ menu=[
     "Account Closure"
 ]
 choice= st.sidebar.selectbox('Select Module',menu)
+
+# Home Page
+if choice == 'Home':
+    st.subheader('Welcome to the Banking Transaction Management System.')
+    st.write(
+        "This application helps users manage basic banking \n "
+        "operations through a simple and user-friendly interface.\n\n"
+        "Select a banking module from the sidebar to get started."
+    )
 
  # 1.Customer Registration
 if choice =="Customer Registration":
@@ -98,4 +108,36 @@ elif choice == "Account Creation":
             st.write('Customer ID:',int(customer_id))
             st.write('Account Type:',account_type)
             st.write('Initial Deposit:',f'₹{initial_deposit:,.2f}')
-            
+# 3 Deposit
+elif choice=='Deposit':
+    st.subheader('Deposit')
+
+    #get customer id
+    customer_id=st.number_input(
+        "Enter Customer ID:",
+        min_value=1,
+        step=1
+    )
+
+    # get deposit amount
+    deposit_amount=st.number_input(
+        "Enter Deposit Amount (₹):",
+        min_value=0.0,
+        step=500.0   
+    )
+
+    # Deposit money
+    if st.button("Deposit Money"):
+
+        if deposit_amount <=0:
+            st.error("Deposit amount must be greater than ₹0.")
+        else:
+            st.success("Deposit details submitted successfully!")
+
+            st.write('### Deposit Details')
+            st.write('Customer ID:',int(customer_id))
+            st.write('Deposit Amount:',f'₹{deposit_amount:,.2f}')
+
+
+
+   
