@@ -10,6 +10,15 @@
 import streamlit as st  # used to create web user interface
 import random # used to generate random otp for secure transaction
 
+if 'customers' not in st.session_state: # Check whether the customers dictionary exists in the session state
+    st.session_state.customers={}     # Create an empty dictionary to store customer details
+
+if 'next_customer_id' not in st.session_state: # Check whether the next customer ID exists in the session state
+    st.session_state.next_customer_id= 101   # Set the starting customer ID to 101
+
+if "registered_customer_id" not in st.session_state: # Check whether the registered customer ID variable exists
+    st.session_state.registered_customer_id = None  # Set it to None because no customer has been registered yet
+
 # Streamlit user interface
 
 st.title("🏦 Banking Transaction Management System") # Create a bank object if it doesn't already exist
@@ -27,10 +36,28 @@ menu=[
     "Withdrawal",
     "Fund Transfer",
     "Balance Enquiry",
+    "Minimum Balance Validation",
     "Transaction History",
     "Account Closure"
 ]
-choice= st.sidebar.selectbox('Select Module',menu)
+if "module_menu" not in st.session_state:
+# Check whether the current module menu exists
+    st.session_state.module_menu = "Home"  # Set Home as the default module when the application starts
+
+if "next_module" not in st.session_state:  # Check whether the next module variable exists
+    st.session_state.next_module='Home'    # Set Home as the default next module
+
+if st.session_state.next_module is not None: # Check whether a next module has been selected
+    st.session_state.module_menu = st.session_state.next_module    # Change the current module to the selected next module
+    st.session_state.next_module = None 
+    # Reset the next module to None to avoid repeating the navigation
+
+choice = st.sidebar.selectbox(
+    "Select Module",
+    menu,
+    key="module_menu"
+)
+
 
 # Home Page
 if choice == 'Home':
@@ -41,8 +68,8 @@ if choice == 'Home':
         "Select a banking module from the sidebar to get started."
     )
 
- # 1.Customer Registration
-if choice =="Customer Registration":
+# 1.Customer Registration
+elif choice =="Customer Registration":
     st.subheader('Customer Registration')  #display the heading
 
     # get the customer's name
@@ -65,49 +92,90 @@ if choice =="Customer Registration":
             for error in errors:
                 st.error(error) #display each error separately
         else:
-            st.success('Customer registered sucessfully!') # display the succes message
+            # Generate a customer ID
+            customer_id = st.session_state.next_customer_id
 
-            st.write('### Customer Details')
-            st.write('Name:',name.strip())
-            st.write('Phone:',phone)
-            st.write('Email:',email.strip())
+            # Save customer details
+            st.session_state.customers[customer_id] = {
+                "name": name.strip(),
+                "phone": phone,
+                "email": email.strip()
+            }
 
- # 2.Account Creation
+            # Save the registered customer ID
+            st.session_state.registered_customer_id = customer_id
+
+            # Prepare the next customer ID
+            st.session_state.next_customer_id += 1
+
+            st.success("Customer registered successfully!")
+
+    # Display details after registration
+    if st.session_state.registered_customer_id is not None: #check wheather a customer has been registered
+        customer_id = st.session_state.registered_customer_id # get recently registered customer's ID
+        customer = st.session_state.customers[customer_id]  #get the customer's details from the dictionary
+
+        st.write("### Customer Details")
+        st.write("Customer ID:", customer_id)
+        st.write("Name:", customer["name"])
+        st.write("Phone:", customer["phone"])
+        st.write("Email:", customer["email"])
+
+        # Proceed to Account Creation
+        if st.button("Proceed to Account Creation"):
+            st.session_state.next_module = "Account Creation" #request for the next process
+            st.rerun() #Run the script again from the top
+
+
+# 2. Account Creation
 elif choice == "Account Creation":
-    st.subheader('Account Creation')
+    st.subheader("Account Creation")
 
-    #get customer id
-    customer_id=st.number_input(
-        "Enter Customer ID:",
-        min_value=1, #set the minimum vlaue to 1
-        step=1 # + or - by 1
-    )
+    # Get all registered customer IDs
+    customer_ids = st.session_state.customers.keys()
 
-    #select account type
-    account_type=st.selectbox(
-        "Select Account Type:",
-        ["Savings Account","Current Account"] #provide account options
-    )
+    # Check whether a customer is registered
+    if not customer_ids:
+        st.error("Please register a customer first.")
 
-    #get initial deposit amount
-    initial_deposit=st.number_input(
-        "Enter Initial Deposit Amount(₹):",
-        min_value=0.0, #allow zero as the minimum deposit
-        step=500.0 # + or - by 500
-    )
+    else:
+        # Select a registered customer ID
+        customer_id = st.selectbox(
+            "Select Customer ID:",
+            customer_ids
+        )
 
-    #create bank account
-    if st.button('Create Account'):
+        # Get the selected customer's details
+        customer = st.session_state.customers[customer_id]
 
-        if initial_deposit <1000:
-            st.error('Initial deposit must be at least ₹1,000.')
-        else:
-            st.success('Account created successflly!')
+        # Select account type
+        account_type = st.selectbox(
+            "Select Account Type:",
+            ["Savings Account", "Current Account"]
+        )
 
-            st.write('### Account Details')
-            st.write('Customer ID:',int(customer_id))
-            st.write('Account Type:',account_type)
-            st.write('Initial Deposit:',f'₹{initial_deposit:,.2f}')
+        # Get the initial deposit amount
+        initial_deposit = st.number_input(
+            "Enter Initial Deposit Amount (₹):",
+            min_value=0.0,
+            step=500.0
+        )
+
+        # Create the bank account
+        if st.button("Create Account"):
+            
+            if initial_deposit < 1000:
+                st.error("Initial deposit must be at least ₹1,000.")
+
+            else:
+                st.success("Account created successfully!")
+
+                st.write("### Account Details")
+                st.write("Customer ID:", customer_id)
+                st.write("Account Type:", account_type)
+                st.write("Initial Deposit:",f"₹{initial_deposit:,.2f}")
+               
+
 # 3 Deposit
 elif choice=='Deposit':
     st.subheader('Deposit')
@@ -115,7 +183,7 @@ elif choice=='Deposit':
     #get customer id
     customer_id=st.number_input(
         "Enter Customer ID:",
-        min_value=1,
+        min_value=101,
         step=1
     )
 
@@ -137,6 +205,8 @@ elif choice=='Deposit':
             st.write('### Deposit Details')
             st.write('Customer ID:',int(customer_id))
             st.write('Deposit Amount:',f'₹{deposit_amount:,.2f}')
+
+
 # 4 Withdrawal
 elif choice == "Withdrawal":
     st.header('Withdrawal')
@@ -144,7 +214,7 @@ elif choice == "Withdrawal":
     # get customer id
     customer_id=st.number_input(
     "Enter Customer ID:",
-    min_value=1,
+    min_value=101,
     step=1
     )
 
@@ -165,7 +235,7 @@ elif choice == "Withdrawal":
 
             st.write('### Withdrawal Details')
             st.write('Customer ID:',int(customer_id))
-            st.write('Withdrawal Amount:'f'₹{withdrawal_amount:,.2f}')
+            st.write('Withdrawal Amount:',f'₹{withdrawal_amount:,.2f}')
 
 # 5 Fund Transfer
 elif choice =='Fund Transfer':
@@ -175,13 +245,13 @@ elif choice =='Fund Transfer':
     #get sender customer id
     sender_id=st.number_input(
         'Enter Sender Customer ID:',
-        min_value=1,
+        min_value=101,
         step=1
     )
     # Get receiver customer ID
     receiver_id = st.number_input(
         "Enter Receiver Customer ID:",
-        min_value=1,
+        min_value=101,
         step=1
     )
     # get transfer amount
@@ -193,6 +263,8 @@ elif choice =='Fund Transfer':
 
     # transfer money
     if st.button('Transfer Money'):
+
+        errors=[]
 
         if sender_id == receiver_id:
             errors.append('Sender and receiver Ids must be different.')
@@ -215,12 +287,12 @@ elif choice =='Fund Transfer':
 
 # 6 Balance Enquiry
 elif choice== 'Balance Enquiry':
-    st.subheader('Balance Enquiry')
+    st.subheader('Balance Enquiry') 
 
     # get customer id
     customer_id = st.number_input(
     "Enter Customer ID:",
-    min_value=1,
+    min_value=101,
     step=1
 )
 
@@ -238,5 +310,69 @@ elif choice== 'Balance Enquiry':
         )
 
 
+# 7 Minimum Balance Validation
+elif choice =='Minimum Balance Validation':
+    st.subheader("Minimum Balance Validation")
 
-   
+    # get customer id
+    customer_id = st.number_input(
+        'Enter Customer ID:',
+        min_value=101,
+        step=1
+    )
+
+    # Check minimum balance
+    if st.button('Check Minimum Balance'):
+
+        st.success('Minimum balance validation request submitted')
+
+
+        st.write('### Account Details')
+        st.write("Customer ID:", int(customer_id))
+
+
+# 8 Transaction History
+elif choice == 'Transaction History':
+    st.subheader('Transaction History')
+
+    # get customer id
+    customer_id = st.number_input(
+        'Enter Customer ID:',
+        min_value=101,
+        step=1
+    ) 
+
+    # get the Transaction History
+    if st.button('Transaction History'):
+        st.success('Transaction history request submitted successfully!')
+
+        st.write('### Transaction Details')
+        st.write('Customer ID:',int(customer_id))
+    
+# 9 Account Closure
+elif choice == 'Account Closure':
+    st.subheader('Account Closure')
+
+    # get customer id
+    customer_id =st.number_input(
+        'Enter Customer ID:',
+        min_value=101,
+        step=1
+    )
+
+    # confirm account closure
+    confirm_closure=st.checkbox(
+        'I confirm that i want to close this account.'
+    )
+
+    # Close account
+    if st.button('Close Account'):
+
+        # check wheather the user confirmed
+        if not confirm_closure:
+            st.error('Please confirm before closing the account.')
+        else:
+            st.success('Account closure request submitted successfully!')
+
+            st.write('### Account Closure Details')
+            st.write('Customer ID:',int(customer_id))
