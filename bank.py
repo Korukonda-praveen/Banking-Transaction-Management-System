@@ -17,7 +17,7 @@
 # ==================================================
 
 
-# Create a class to store customoer details
+# # Class 1: Store customer details
 
 class Customer:
 
@@ -42,7 +42,9 @@ class Customer:
 
         # Display the private email address
         print("Email:", self.__email)
-# Create a class to store bank account details
+
+
+# Class 2: Manage an individual bank account
 
 class Account:
 
@@ -52,6 +54,8 @@ class Account:
         self.customer_id=customer_id #public
         self.account_type=account_type #public
         self.__balance=balance #private
+        self.transaction_history=[]
+        self.transaction_history.append(f"Account created with initial deposit: ₹{balance:.2f}")         # Record the initial account creation and deposit
 
     # Create a method to display the details
     def display_details(self):
@@ -95,7 +99,20 @@ class Account:
 
         return self.__balance # it updated the balance
 
-# Create a class to mange the entire bank
+
+# child class 1 savings account
+class SavingsAccount(Account):
+
+ def __init__(self, account_number, customer_id,balance):
+     super().__init__(account_number, customer_id, "Savings Account", balance)
+
+# child class 2 current account
+class CurrentAccount(Account):
+    def __init__(self, account_number, customer_id, balance):
+        super().__init__(account_number, customer_id,'Current Account', balance)
+
+
+# Class 3: Manage the entire bank
 
 class Bank:
 
@@ -114,8 +131,8 @@ class Bank:
         # Set the starting account number
         self.next_account_number=1001
 
-    # Register a new customer
-    def register_cutomer(self,name,phone,email):
+     # 1. Customer Registration
+    def register_customer(self,name,phone,email):
 
         # Generate a customer ID with three digits
         customer_id=f'Cust{self.next_customer_id:03d}'
@@ -132,3 +149,126 @@ class Bank:
         # return the generated customer ID
         return customer_id
 
+    
+    # 2. Account Creation
+    def create_account(self,customer_id,account_type,initial_deposit):
+
+        if customer_id not in self.customers: #it will check the customer is registered or not
+            raise ValueError('Customer Id does not exist.')
+ 
+        if account_type not in ['Savings Account','Current Account']: #it check account type valid or not
+            raise ValueError('Invalid account type.')
+
+        if initial_deposit <1000: #it check the deposit 1000 or less than 1000
+            raise ValueError('Initial deposit must be at least ₹1,000')
+
+        # Generate the next account number
+        account_number=self.next_account_number
+
+        # creating an account object
+        account=Account(
+            account_number,
+            customer_id,
+            account_type,
+            initial_deposit
+        )
+
+        self.accounts[account_number]=account #stores the account in the bank's account dictionary
+
+        self.next_account_number+=1 #increase the account to for the next customer
+
+        return account_number #it generates account number
+
+    # 3. Deposit
+    def deposit(self,account_number,amount):
+
+        if account_number not in self.accounts: # it will check whether is exists or not
+            raise ValueError('Account does not exist')
+
+        account=self.accounts[account_number] #get the account object from the dicitionary
+
+        updated_balance=account.deposit(amount) # it use the account class method and update the balance
+
+        return updated_balance  # Return the account balance after depositing the money
+
+    # 4. Withdraw
+    def withdraw(self,account_number,amount):
+
+        if account_number not in self.accounts:# Check whether the given account number exists in the bank
+            raise ValueError('Account does not exist.')
+
+        # Get the account object using the account number
+        account=self.accounts[account_number]
+
+        # Call the withdraw method from the Account class
+        # This checks the amount and available balance, then deducts the money     
+        updated_balance=account.withdraw(amount)
+
+        return updated_balance   # Return the account balance after withdrawing the money
+
+    # 5. Fund Transfer
+    def Transfer(self,sender_account, receiver_account,amount):
+
+        # Check whether the sender's account exists
+        if sender_account not in self.accounts:
+            raise ValueError('Sender Account does not exist')
+
+        # Check whether the receiver's account exists
+        if  receiver_account not in self.accounts:
+            raise ValueError('Receiver Account does not exist')
+        
+        # Prevent transferring money to the same account
+        if sender_account==receiver_account:
+            raise ValueError('Cannot transfer money to the same account.')
+
+        # Get the sender's account object
+        sender=self.accounts[sender_account]
+        # Get the receiver's account object
+        receiver=self.accounts[receiver_account]
+
+        #withdraw money from the sender account
+        sender.withdraw(amount)
+
+        # deposit the same money in the receiver account
+        receiver.deposit(amount)
+
+        return "Fund transfer successful" # a success message after the transfer
+
+    # 6. Balance Enquiry
+    def check_balance(self,account_number):
+
+        if account_number not in self.accounts: # Check whether the given account number exists in the bank
+            raise ValueError('Account does not exist')
+
+        # Get the account object using the account number
+        account=self.accounts[account_number]
+
+        # Get the balance using the account class method
+        balance=account.get_balance()
+
+        return balance
+        
+    # 7. Transaction History
+    def get_transaction_history(self,account_number):
+
+        if account_number not in self.accounts:# Check whether the account number exists in the bank
+            raise ValueError('Account does not exist.')
+
+        account=self.accounts[account_number]    # Get the account object using the account number
+
+        return account.transaction_history     # Return the transaction history stored in the account
+
+    # 8. Account Closure
+    def close_account(self,account_number):
+
+        if account_number not in self.accounts:
+            raise ValueError('Account does not exist.')
+
+        account=self.accounts[account_number]
+
+        if account.get_balance() !=0:  # Check whether the account has a remaining balance
+            raise ValueError('Withdraw the remaining balance before closing the account')
+
+        del self.accounts[account_number]       # Remove the account from the bank's account dictionary
+
+        return "Account closed sucessfully."
