@@ -92,9 +92,8 @@ elif choice =="Customer Registration":
             for error in errors:
                 st.error(error) #display each error separately
         else:
-            # Generate a customer ID
-            customer_id = st.session_state.next_customer_id
-
+             # Generate a customer ID # Add zeros before the number to make it at least 3 digits (e.g., 1 becomes 001)
+            customer_id = f"CUST{st.session_state.next_customer_id:03d}"
             # Save customer details
             st.session_state.customers[customer_id] = {
                 "name": name.strip(),
@@ -131,49 +130,60 @@ elif choice =="Customer Registration":
 elif choice == "Account Creation":
     st.subheader("Account Creation")
 
-    # Get all registered customer IDs
-    customer_ids = st.session_state.customers.keys()
-
-    # Check whether a customer is registered
-    if not customer_ids:
+  # Check whether a customer is registered
+    if not st.session_state.customers:
         st.error("Please register a customer first.")
 
     else:
         # Select a registered customer ID
-        customer_id = st.selectbox(
-            "Select Customer ID:",
-            customer_ids
-        )
+        customer_id = st.text_input(
+            "Enter  Customer ID (e.g., CUST001):", ).strip().upper()
 
-        # Get the selected customer's details
-        customer = st.session_state.customers[customer_id]
+        # check wheather the customer ID Exists
+        if customer_id in st.session_state.customers:
 
-        # Select account type
-        account_type = st.selectbox(
-            "Select Account Type:",
-            ["Savings Account", "Current Account"]
-        )
+         # Get the selected customer's details
+            customer = st.session_state.customers[customer_id]
+        
+        
+         # Display customer details
+            st.write("Customer Name:", customer["name"])
+            st.write("Phone Number:", customer["phone"])
+            st.write("Email:", customer["email"])
 
-        # Get the initial deposit amount
-        initial_deposit = st.number_input(
-            "Enter Initial Deposit Amount (₹):",
-            min_value=0.0,
-            step=500.0
-        )
 
-        # Create the bank account
-        if st.button("Create Account"):
-            
-            if initial_deposit < 1000:
-                st.error("Initial deposit must be at least ₹1,000.")
 
-            else:
-                st.success("Account created successfully!")
+            # Select account type
+            account_type = st.selectbox(
+                "Select Account Type:",
+                ["Savings Account", "Current Account"]
+            )
 
-                st.write("### Account Details")
-                st.write("Customer ID:", customer_id)
-                st.write("Account Type:", account_type)
-                st.write("Initial Deposit:",f"₹{initial_deposit:,.2f}")
+            # Get the initial deposit amount
+            initial_deposit = st.number_input(
+                "Enter Initial Deposit Amount (₹):",
+                min_value=0.0,
+                step=500.0
+            )
+
+
+            # Create the bank account
+            if st.button("Create Account"):
+                
+                if initial_deposit < 1000:
+                    st.error("Initial deposit must be at least ₹1,000.")
+
+                else:
+                    st.success("Account created successfully!")
+
+                    st.write("### Account Details")
+                    st.write("Customer ID:", customer_id)
+                    st.write("Account Type:", account_type)
+                    st.write("Initial Deposit:",f"₹{initial_deposit:,.2f}")
+        elif customer_id:
+            # Show a warning for an invalid customer ID
+            st.warning("Please enter a valid registered Customer ID.")       
+
                
 
 # 3 Deposit
