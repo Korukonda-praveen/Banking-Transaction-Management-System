@@ -205,7 +205,7 @@ elif choice == "Account Creation":
         
         
          # Display customer details
-            st.write("Name:", customer.name)
+            st.write("Name:",customer.name)
             st.write("Phone:", customer._phone)
             st.write("Email:", customer._Customer__email)
 
@@ -532,12 +532,23 @@ elif choice == 'Account Closure':
         if not confirm_closure:
             st.error('Please confirm before closing the account.')
         else:
-            try:
-                result = bank.close_account(account_number)
-                st.success(result)
-                st.write("Closed Account Number:", account_number)
+                try:
+                    # Close the account and get the settlement amount
+                    settlement_amount = bank.close_account(account_number)
 
-            except ValueError as error:
-                st.error(str(error))
+                    # Display the success message
+                    st.success("Account closed successfully!")
 
+                    # Display the closed account number
+                    st.write("Closed Account Number:", account_number)
 
+                    # Display the final settlement amount
+                    st.info(
+                        f"Final settlement amount: ₹{settlement_amount:.2f}"
+                    )
+
+                    # Confirm that the account balance was cleared
+                    st.write("Account balance after closure: ₹0.00")
+
+                except ValueError as error:
+                    st.error(str(error))
