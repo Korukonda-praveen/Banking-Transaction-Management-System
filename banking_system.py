@@ -17,11 +17,10 @@ if "registered_customer_id" not in st.session_state: # Check whether the registe
 
 st.title("🏦 Banking Transaction Management System") # Create a bank object if it doesn't already exist
 
-if 'bank' not in st.session_state:
+if 'bank' not in st.session_state: # Initialize the Bank in session state so it doesn't reset on every click
       st.session_state.bank= Bank()
 
-bank=st.session_state.bank # Get the existing bank object
-
+bank=st.session_state.bank # Use st.session_state.bank instead of just 'bank' throughout your code
 menu=[
     "Home",
     "Customer Registration",
@@ -408,14 +407,19 @@ elif choice == 'Transaction History':
     if st.button('Transaction History'):
         try:
              # Retrieve transaction history from the backend
+                account=bank.accounts[account_number]
                 history = bank.get_transaction_history(account_number)
+                current_balance=account.get_balance()
 
                 st.write("### Transaction Details")
                 st.write("Account Number:", account_number)
 
+                # Display current balance nicely using a Streamlit metric card
+                st.metric(label="Current Balance", value=f"₹{current_balance:.2f}")
+
                 if history:
-                    for index, transaction in enumerate(history, start=1):
-                        st.write(f"{index}. {transaction}")
+                   # Combines all transactions into a single numbered list and displays it
+                    st.markdown("\n".join(f"1. {t}" for t in history))
                 else:
                     st.info("No transactions found.")
 
