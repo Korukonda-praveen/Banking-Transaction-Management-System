@@ -16,6 +16,7 @@
 # to make the Streamlit application work with real data.
 # ==================================================
 
+import os #check wheather TXT files exist 
 
 # # Class 1: Store customer details
 
@@ -111,6 +112,21 @@ class Account:
 
 
         return self.__balance # it updated the balance
+    
+    def settle_for_closure(self):
+        # Store the remaining balance
+        remaining_balance = self.__balance
+
+        # Empty the account balance
+        self.__balance = 0
+
+        # Record the final settlement
+        self.transaction_history.append(
+            f"Final settlement paid: ₹{remaining_balance:.2f}"
+        )
+
+        # Return the settled amount
+        return remaining_balance
 
 
 # child class 1 savings account
@@ -131,6 +147,32 @@ class Bank:
 
     "Initialize the bank"
     def __init__(self):
+        
+        
+        # Set the names of the TXT files used to store bank records
+        
+        self.customers_file = "customers.txt"
+        
+        self.accounts_file = "accounts.txt"
+        
+        self.transactions_file = "transactions.txt"
+        
+        self.closed_accounts_file = "closed_accounts.txt"
+
+        # Create TXT files if they do not exist
+        for file_name in [
+            self.customers_file,
+            self.accounts_file,
+            self.transactions_file,
+            self.closed_accounts_file
+        ]:
+            # Check whether the file already exists
+            if not os.path.exists(file_name):
+
+                # Create an empty TXT file
+                with open(file_name, "w") as file:
+                    pass
+
 
         # To store all the registerd customers
         self.customers={}
@@ -138,11 +180,28 @@ class Bank:
         # To store all created bank accounts
         self.accounts={}
 
+        # Store closed accounts and their transaction histories
+        self.closed_accounts = {}
+
         # set the starting customer ID
         self.next_customer_id=1
 
         # Set the starting account number
         self.next_account_number=1001
+
+
+        # Load saved customer details
+        self.load_customers()
+
+        # Load saved active accounts
+        self.load_accounts()
+
+        # Load saved closed accounts
+        self.load_closed_accounts()
+
+        # Load transaction histories
+        self.load_transactions()
+
 
      # 1. Customer Registration
     def register_customer(self,name,phone,email):
@@ -158,6 +217,9 @@ class Bank:
 
         # Increase the customer ID counter by 1
         self.next_customer_id+=1
+
+        # Save customer details in the TXT file
+        self.save_customers()
 
         # return the generated customer ID
         return customer_id
@@ -191,6 +253,12 @@ class Bank:
 
         self.next_account_number+=1 #increase the account to for the next customer
 
+        # Save account details in the TXT file
+        self.save_accounts()
+
+        self.save_transactions() # Save the initial transaction history
+
+        
         return account_number #it generates account number
 
     # 3. Deposit
@@ -202,6 +270,10 @@ class Bank:
         account=self.accounts[account_number] #get the account object from the dicitionary
 
         updated_balance=account.deposit(amount) # it use the account class method and update the balance
+
+        self.save_accounts() # Save the updated account balance
+
+        self.save_transactions()  # Save the transaction history
 
         return updated_balance  # Return the account balance after depositing the money
 
@@ -217,7 +289,11 @@ class Bank:
         # Call the withdraw method from the Account class
         # This checks the amount and available balance, then deducts the money     
         updated_balance=account.withdraw(amount)
+        
+        self.save_accounts() # Save the updated account balance
 
+        self.save_transactions()  # Save the transaction history
+        
         return updated_balance   # Return the account balance after withdrawing the money
 
     # 5. Fund Transfer
@@ -253,6 +329,10 @@ class Bank:
 
         # deposit the same money in the receiver account
         receiver.deposit(amount)
+      
+        self.save_accounts() # Save the updated account balance
+
+        self.save_transactions()  # Save the transaction history
 
         return "Fund transfer successful" # a success message after the transfer
 
@@ -288,9 +368,225 @@ class Bank:
 
         account=self.accounts[account_number]
 
-        if account.get_balance() !=0:  # Check whether the account has a remaining balance
-            raise ValueError('Withdraw the remaining balance before closing the account')
+        # Settle the remaining balance and make it zero
+        settlement_amount = account.settle_for_closure()
+        
+        # Record the account closure in its transaction history
+        account.transaction_history.append('Account closed successfully.')
 
-        del self.accounts[account_number]       # Remove the account from the bank's account dictionary
+        # Save the closed account and its transaction history
+        self.closed_accounts[account_number] = account
 
-        return "Account closed sucessfully."
+        del self.accounts[account_number] # Remove the account from the bank's account dictionary
+ 
+        self.save_closed_accounts()# Save closed account details in the TXT file
+        self.save_accounts()   # Save the updated active account records
+        self.save_transactions()  # Save the transaction history
+        return settlement_amount
+
+    
+    # Save customer details in a TXT file
+    def save_customers(self):
+
+        # Open the file to save customer details
+        with open(self.customers_file, "w") as file:
+
+            # Get each registered customer
+            for customer in self.customers.values():
+
+                # Write customer details into the file
+                file.write(
+                    f"{customer.customer_id}|"
+                    f"{customer.name}|"
+                    f"{customer._phone}|"
+                    f"{customer._Customer__email}\n"
+                )
+
+    # Save account details in a TXT file
+    def save_accounts(self):
+
+        # Open the file to save account details
+        with open(self.accounts_file, "w",encoding="utf-8") as file:
+
+            # Get each active bank account
+            for account in self.accounts.values():
+
+                # Write account details into the file
+                file.write(
+                    f"{account.account_number}|"
+                    f"{account.customer_id}|"
+                    f"{account.account_type}|"
+                    f"{account.get_balance()}\n"
+                )
+
+
+    # Save transaction histories in a TXT file
+    def save_transactions(self):
+
+        # Open the file to save transaction details
+        with open(self.transactions_file, "w",encoding="utf-8") as file:
+
+            # Combine active and closed accounts
+            all_accounts = {
+                **self.accounts,
+                **self.closed_accounts
+            }
+
+            # Get each account
+            for account in all_accounts.values():
+
+                # Get each transaction from the account history
+                for transaction in account.transaction_history:
+
+                    # Write the account number and transaction details
+                    file.write(
+                        f"{account.account_number}|"
+                        f"{transaction}\n"
+                    )
+
+      # Save closed account details in a TXT file
+    def save_closed_accounts(self):
+
+        # Open the file to save closed account details
+        with open(self.closed_accounts_file, "w",encoding="utf-8") as file:
+
+            # Get each closed account
+            for account in self.closed_accounts.values():
+
+                # Write the closed account details
+                file.write(
+                    f"{account.account_number}|"
+                    f"{account.customer_id}|"
+                    f"{account.account_type}|"
+                    f"{account.get_balance()}\n"
+                )
+
+
+    # Load customer details from the TXT file
+    def load_customers(self):
+
+        # Open the customer file
+        with open(self.customers_file, "r",encoding="utf-8") as file:
+
+            # Read each line from the file
+            for line in file:
+
+                # Split customer details
+                customer_id, name, phone, email = line.strip().split("|", 3)
+
+                # Create a customer object
+                customer = Customer(customer_id, name, phone, email)
+
+                # Store the customer details
+                self.customers[customer_id] = customer
+
+         # Check whether any customers are registered
+        if self.customers:
+
+            # Get the highest customer ID, such as Cust003
+            last_customer_id = max(self.customers)
+
+            # Extract the number and set the next customer ID
+            self.next_customer_id = int(last_customer_id[4:]) + 1
+
+
+    
+    # Load account details from the TXT file
+    def load_accounts(self):
+
+        # Open the account file
+        with open(self.accounts_file, "r",encoding="utf-8") as file:
+
+            # Read each account record
+            for line in file:
+
+                # Split account details
+                account_number, customer_id, account_type, balance = line.strip().split("|", 3)
+
+                # Convert account number and balance to numbers
+                account_number = int(account_number)
+                balance = float(balance)
+
+                # Create the correct account object
+                if account_type == "Savings Account":
+                    account = SavingsAccount(account_number, customer_id, balance)
+                else:
+                    account = CurrentAccount(account_number, customer_id, balance)
+
+                # Clear the default history before loading saved transactions
+                account.transaction_history = []
+                
+                # Store the account in the dictionary
+                self.accounts[account_number] = account
+        
+        
+        # Set the starting account number
+        self.next_account_number = 1001
+
+        # Check active accounts
+        if self.accounts:
+            self.next_account_number = max(self.accounts) + 1
+
+        # Check closed accounts
+        if self.closed_accounts:
+            self.next_account_number = max(
+                self.next_account_number,
+                max(self.closed_accounts) + 1
+            )
+
+
+
+     # Load transaction histories from the TXT file
+    def load_transactions(self):
+
+        # Open the transaction file
+        with open(self.transactions_file, "r",encoding="utf-8") as file:
+
+            # Read each transaction record
+            for line in file:
+
+                # Split the account number and transaction details
+                account_number, transaction = line.strip().split("|", 1)
+
+                # Convert account number into an integer
+                account_number = int(account_number)
+
+                # Find the account in active or closed accounts
+                account = self.accounts.get(account_number)
+
+                if account is None:
+                    account = self.closed_accounts.get(account_number)
+
+                # Add the transaction to the account history
+                if account is not None:
+                    account.transaction_history.append(transaction)
+
+    
+    # Load closed accounts from the TXT file
+    def load_closed_accounts(self):
+
+        # Open the closed accounts file
+        with open(self.closed_accounts_file, "r",encoding="utf-8") as file:
+
+            # Read each closed account record
+            for line in file:
+
+                # Split the account details
+                account_number, customer_id, account_type, balance = line.strip().split("|", 3)
+
+                # Convert values into numbers
+                account_number = int(account_number)
+                balance = float(balance)
+
+                # Create the correct account object
+                if account_type == "Savings Account":
+                    account = SavingsAccount(account_number, customer_id, balance)
+                else:
+                    account = CurrentAccount(account_number, customer_id, balance)
+
+                # Store the closed account
+                self.closed_accounts[account_number] = account
+
+                # Clear the default history before loading saved transactions
+                account.transaction_history = []
+
