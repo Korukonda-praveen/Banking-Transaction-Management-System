@@ -94,6 +94,9 @@ class Account:
         # Check wheather enought balance is available
         if amount>self.__balance:
             raise ValueError('Insufficient account balance.')
+         # Check whether the minimum balance of ₹1,000 is maintained
+        if self.__balance - amount < 1000:
+            raise ValueError('Minimum balance of ₹1,000 must be maintained.')
 
         self.__balance -=amount #subtract the amount from the balance
 
