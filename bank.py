@@ -164,14 +164,14 @@ class Bank:
 
         # Generate the next account number
         account_number=self.next_account_number
-
-        # creating an account object
-        account=Account(
-            account_number,
-            customer_id,
-            account_type,
-            initial_deposit
-        )
+        
+        # Create the correct account type
+        if account_type == "Savings Account":
+            account = SavingsAccount(
+                account_number, customer_id, initial_deposit)
+        elif account_type == "Current Account":
+            account = CurrentAccount(
+                account_number, customer_id, initial_deposit)
 
         self.accounts[account_number]=account #stores the account in the bank's account dictionary
 
