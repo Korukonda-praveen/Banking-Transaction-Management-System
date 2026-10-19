@@ -48,7 +48,7 @@ Banking-Transaction-Management-System/
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/Korukonda-praveen/Banking-Transaction-Management-System.git
+https://github.com/Korukonda-praveen/Banking-Transaction-Management-System.git
 ```
 
 ### Step 2: Open the project folder
