@@ -8,13 +8,7 @@
 
 
 import streamlit as st  # used to create web user interface
-import random # used to generate random otp for secure transaction
-
-if 'customers' not in st.session_state: # Check whether the customers dictionary exists in the session state
-    st.session_state.customers={}     # Create an empty dictionary to store customer details
-
-if 'next_customer_id' not in st.session_state: # Check whether the next customer ID exists in the session state
-    st.session_state.next_customer_id= 101   # Set the starting customer ID to 101
+from bank import Bank  # Import the backend Bank class
 
 if "registered_customer_id" not in st.session_state: # Check whether the registered customer ID variable exists
     st.session_state.registered_customer_id = None  # Set it to None because no customer has been registered yet
@@ -23,10 +17,10 @@ if "registered_customer_id" not in st.session_state: # Check whether the registe
 
 st.title("🏦 Banking Transaction Management System") # Create a bank object if it doesn't already exist
 
-# if 'bank' not in st.session_state:
-    #  st.session_state.bank= Bank()
+if 'bank' not in st.session_state:
+      st.session_state.bank= Bank()
 
-# bank=st.session_state.bank # Get the existing bank object
+bank=st.session_state.bank # Get the existing bank object
 
 menu=[
     "Home",
@@ -72,7 +66,7 @@ if choice == 'Home':
 elif choice =="Customer Registration":
     st.subheader('Customer Registration')  #display the heading
 
-    # get the customer's name
+    # get the customer's details
     name=st.text_input('Enter Customer Name:') #collect the customer name
     phone=st.text_input('Enter Phone Number:') #collect the phone number
     email=st.text_input('Enter Email Address:') # collect the email address
@@ -92,33 +86,33 @@ elif choice =="Customer Registration":
             for error in errors:
                 st.error(error) #display each error separately
         else:
-             # Generate a customer ID # Add zeros before the number to make it at least 3 digits (e.g., 1 becomes 001)
-            customer_id = f"CUST{st.session_state.next_customer_id:03d}"
-            # Save customer details
-            st.session_state.customers[customer_id] = {
-                "name": name.strip(),
-                "phone": phone,
-                "email": email.strip()
-            }
 
-            # Save the registered customer ID
-            st.session_state.registered_customer_id = customer_id
+            try:
+                # Register the customer using the backend
+                customer_id = bank.register_customer(
+                    name.strip(),
+                    phone,
+                    email.strip())
 
-            # Prepare the next customer ID
-            st.session_state.next_customer_id += 1
+                # Save the registered customer ID
+                st.session_state.registered_customer_id = customer_id
 
-            st.success("Customer registered successfully!")
+                st.success("Customer registered successfully!")
 
-    # Display details after registration
-    if st.session_state.registered_customer_id is not None: #check wheather a customer has been registered
-        customer_id = st.session_state.registered_customer_id # get recently registered customer's ID
-        customer = st.session_state.customers[customer_id]  #get the customer's details from the dictionary
+            except(ValueError,TypeError,KeyError) as error:   # Catch unexpected errors during registration
+                st.error(f'Registration failed:{error}')
 
+        # Display the latest registered customer's details
+        customer_id=st.session_state.registered_customer_id
+
+        if customer_id is not None and customer_id in bank.customers:
+            customer=bank.customers[customer_id]
+        
         st.write("### Customer Details")
         st.write("Customer ID:", customer_id)
-        st.write("Name:", customer["name"])
-        st.write("Phone:", customer["phone"])
-        st.write("Email:", customer["email"])
+        st.write("Name:", customer.name)
+        st.write("Phone:", customer._phone)
+        st.write("Email:", customer._Customer__email)
 
         # Proceed to Account Creation
         if st.button("Proceed to Account Creation"):
@@ -130,28 +124,28 @@ elif choice =="Customer Registration":
 elif choice == "Account Creation":
     st.subheader("Account Creation")
 
-  # Check whether a customer is registered
-    if not st.session_state.customers:
-        st.error("Please register a customer first.")
+    # Check whether a customer is registered
+    if not bank.customers:
+        st.warning("Please register a customer first.")
 
     else:
-        # Select a registered customer ID
-        customer_id = st.text_input(
-            "Enter  Customer ID (e.g., CUST001):", ).strip().upper()
+          # Select a registered customer
+        customer_id = st.selectbox(
+            "Select Customer ID:",
+            list(bank.customers.keys()),
+            key="account_creation_customer_id") # Give this input box a unique name
 
-        # check wheather the customer ID Exists
-        if customer_id in st.session_state.customers:
+        # Check whether the customer ID exists in the bank's customer dictionary
+        if customer_id in bank.customers:
 
          # Get the selected customer's details
-            customer = st.session_state.customers[customer_id]
+            customer = bank.customers[customer_id]
         
         
          # Display customer details
-            st.write("Customer Name:", customer["name"])
-            st.write("Phone Number:", customer["phone"])
-            st.write("Email:", customer["email"])
-
-
+            st.write("Name:", customer.name)
+            st.write("Phone:", customer._phone)
+            st.write("Email:", customer._Customer__email)
 
             # Select account type
             account_type = st.selectbox(
@@ -169,33 +163,36 @@ elif choice == "Account Creation":
 
             # Create the bank account
             if st.button("Create Account"):
-                
-                if initial_deposit < 1000:
-                    st.error("Initial deposit must be at least ₹1,000.")
 
-                else:
+                try:
+                    account_number = bank.create_account(
+                    customer_id,
+                    account_type,
+                    initial_deposit)
+
+                    
                     st.success("Account created successfully!")
 
                     st.write("### Account Details")
                     st.write("Customer ID:", customer_id)
                     st.write("Account Type:", account_type)
                     st.write("Initial Deposit:",f"₹{initial_deposit:,.2f}")
-        elif customer_id:
-            # Show a warning for an invalid customer ID
-            st.warning("Please enter a valid registered Customer ID.")       
-
-               
+                except ValueError as error:
+                    st.error(str(error))  
 
 # 3 Deposit
 elif choice=='Deposit':
     st.subheader('Deposit')
 
-    #get customer id
-    customer_id=st.number_input(
-        "Enter Customer ID:",
-        min_value=101,
-        step=1
-    )
+    # Check whether bank accounts exist
+    if not bank.accounts:
+        st.warning("Please create a bank account first.")
+    
+    else:  
+       # Select the account number
+        account_number = st.selectbox(
+            "Select Account Number:",
+            list(bank.accounts.keys()),key="deposit_account") # Give this input box a unique name
 
     # get deposit amount
     deposit_amount=st.number_input(
@@ -207,26 +204,42 @@ elif choice=='Deposit':
     # Deposit money
     if st.button("Deposit Money"):
 
-        if deposit_amount <=0:
-            st.error("Deposit amount must be greater than ₹0.")
-        else:
+       # Try to validate the customer ID and deposit amount
+        try:
+             # Deposit money using the backend
+            updated_balance = bank.deposit(
+                    account_number, deposit_amount)
+
+
+            # Display a success message when both validations pass
             st.success("Deposit details submitted successfully!")
 
-            st.write('### Deposit Details')
-            st.write('Customer ID:',int(customer_id))
-            st.write('Deposit Amount:',f'₹{deposit_amount:,.2f}')
+            # Display the deposit details
+            st.write("Account Number:", account_number)
+            st.write("Deposited Amount:", f"₹{deposit_amount:,.2f}")
+            st.write("Updated Balance:", f"₹{updated_balance:,.2f}")
+
+
+            # Catch the validation error and display its message
+        except ValueError as error:
+            st.error(str(error))
+
 
 
 # 4 Withdrawal
 elif choice == "Withdrawal":
     st.header('Withdrawal')
 
-    # get customer id
-    customer_id=st.number_input(
-    "Enter Customer ID:",
-    min_value=101,
-    step=1
-    )
+    # Check whether bank accounts exist
+    if not bank.accounts:
+        st.warning("Please create a bank account first.")
+
+    else:
+        # Select the account number
+        account_number = st.selectbox(
+            "Select Account Number:",
+            list(bank.accounts.keys()),
+            key="withdrawal_account") # Give this input box a unique name
 
     # Get withdrawal amount
     withdrawal_amount = st.number_input(
@@ -238,32 +251,52 @@ elif choice == "Withdrawal":
     # Withdrawal money
     if st.button('Withdraw Money'):
 
-        if withdrawal_amount<=0:
-            st.error('Withdrawal amount must be greater than ₹0.')
-        else:
-            st.success('Withdrawal details submitted successfully!')
+        try:
+            # Withdraw money using the backend
+            updated_balance = bank.withdraw(
+            account_number, withdrawal_amount)
+        
+            st.success("Withdrawal successful!")
+            st.write("Account Number:", account_number)
+            st.write("Withdrawn Amount:", f"₹{withdrawal_amount:,.2f}")
+            st.write("Updated Balance:", f"₹{updated_balance:,.2f}")
+        
+        except ValueError as error:
+                st.error(str(error)) 
 
-            st.write('### Withdrawal Details')
-            st.write('Customer ID:',int(customer_id))
-            st.write('Withdrawal Amount:',f'₹{withdrawal_amount:,.2f}')
 
 # 5 Fund Transfer
 elif choice =='Fund Transfer':
     st.header('Fund Transfer')
-    errors=[]
 
-    #get sender customer id
-    sender_id=st.number_input(
-        'Enter Sender Customer ID:',
-        min_value=101,
-        step=1
-    )
-    # Get receiver customer ID
-    receiver_id = st.number_input(
-        "Enter Receiver Customer ID:",
-        min_value=101,
-        step=1
-    )
+    # Check whether at least two accounts exist
+    if len(bank.accounts) < 2:
+        st.warning("Create at least two bank accounts before transferring money.")
+    else:
+        account_numbers = list(bank.accounts.keys())
+
+        # Select the sender's account
+        sender_account = st.selectbox(
+            "Select Sender Account:",
+            account_numbers,
+            key="sender_account"
+        )
+
+        # Select the receiver's account
+        receiver_options = [
+            number for number in account_numbers
+            if number != sender_account
+        ]
+
+        receiver_account = st.selectbox(
+            "Select Receiver Account:",
+            receiver_options,
+            key="receiver_account"
+        )
+
+
+
+      
     # get transfer amount
     transfer_amount=st.number_input(
         'Enter Transfer Amount (₹):',
@@ -273,102 +306,138 @@ elif choice =='Fund Transfer':
 
     # transfer money
     if st.button('Transfer Money'):
+        try:
+            # Transfer money using the backend
+            result = bank.transfer_funds(
+                    sender_account,
+                    receiver_account,
+                    transfer_amount)
 
-        errors=[]
+            st.success(result)
+            st.write(
+                    "Sender's Updated Balance:",
+                    f"₹{bank.check_balance(sender_account):,.2f}"
+                )
+            st.write(
+                    "Receiver's Updated Balance:",
+                    f"₹{bank.check_balance(receiver_account):,.2f}"
+                )
 
-        if sender_id == receiver_id:
-            errors.append('Sender and receiver Ids must be different.')
-
-        if transfer_amount<=0:
-            errors.append('Transfer amount must be greater then ₹0.')
-
-        if errors:
-            for error in errors:
-                st.error(error)
-        
-        else:
-            st.success('Transfer details submitted successfully!')
-
-
-            st.write('### Transfer Details')
-            st.write('Sender Customer ID:',int(sender_id))
-            st.write('Receiver Customer ID:',int(receiver_id))
-            st.write('Transfer Amount:',f'₹{transfer_amount:,.2f}')
+        except ValueError as error:
+                st.error(str(error))
 
 # 6 Balance Enquiry
 elif choice== 'Balance Enquiry':
     st.subheader('Balance Enquiry') 
 
-    # get customer id
-    customer_id = st.number_input(
-    "Enter Customer ID:",
-    min_value=101,
-    step=1
-)
+    if not bank.accounts:
+        st.warning("Please create a bank account first.")
+
+    else:
+        # Select the account number
+        account_number = st.selectbox(
+            "Select Account Number:",
+            list(bank.accounts.keys()),
+            key="balance_account" )# Give this input box a unique name
+       
+
+
 
     # Check account balance
     if st.button('Check Balance'):
+        try:
+           # Get the actual balance from the backend
+            balance = bank.check_balance(account_number)
 
-        st.success('Balance enquiry submitted successfully!')
+            st.success("Balance retrieved successfully!")
+            st.write("Account Number:", account_number)
+            st.write("Available Balance:", f"₹{balance:,.2f}")
 
-        st.write('### Account Details')
-        st.write('Customer ID:',int(customer_id))
-
-        st.info(
-        "The actual account balance will be displayed "
-        "when we connect the banking logic."
-        )
+        except ValueError as error:
+            st.error(str(error))
 
 
 # 7 Minimum Balance Validation
 elif choice =='Minimum Balance Validation':
     st.subheader("Minimum Balance Validation")
 
-    # get customer id
-    customer_id = st.number_input(
-        'Enter Customer ID:',
-        min_value=101,
-        step=1
-    )
+    if not bank.accounts:
+        st.warning("Please create a bank account first.")
 
-    # Check minimum balance
-    if st.button('Check Minimum Balance'):
-
-        st.success('Minimum balance validation request submitted')
+    else:
+        # Select the account number
+        account_number = st.selectbox(
+            "Select Account Number:",
+            list(bank.accounts.keys()),
+            key="minimum_balance_account") # Give this input box a unique name
 
 
-        st.write('### Account Details')
-        st.write("Customer ID:", int(customer_id))
+        # Check minimum balance
+        if st.button("Check Minimum Balance"):
+            try:
+                # Get the current account balance
+                balance = bank.check_balance(account_number)
 
+                st.write("Account Number:", account_number)
+                st.write("Current Balance:", f"₹{balance:,.2f}")
+
+                # Check whether the balance is at least ₹1,000
+                if balance >= 1000:
+                    st.success("Minimum balance requirement is satisfied.")
+                else:
+                    st.warning("Account balance is below ₹1,000.")
+
+            except ValueError as error:
+                st.error(str(error))
 
 # 8 Transaction History
 elif choice == 'Transaction History':
     st.subheader('Transaction History')
 
-    # get customer id
-    customer_id = st.number_input(
-        'Enter Customer ID:',
-        min_value=101,
-        step=1
-    ) 
+    if not bank.accounts:
+        st.warning("Please create a bank account first.")
+
+    else:
+        # Select the account number
+        account_number = st.selectbox(
+            "Select Account Number:",
+            list(bank.accounts.keys()),
+            key="history_account" )
 
     # get the Transaction History
     if st.button('Transaction History'):
-        st.success('Transaction history request submitted successfully!')
+        try:
+             # Retrieve transaction history from the backend
+                history = bank.get_transaction_history(account_number)
 
-        st.write('### Transaction Details')
-        st.write('Customer ID:',int(customer_id))
-    
+                st.write("### Transaction Details")
+                st.write("Account Number:", account_number)
+
+                if history:
+                    for index, transaction in enumerate(history, start=1):
+                        st.write(f"{index}. {transaction}")
+                else:
+                    st.info("No transactions found.")
+
+        except ValueError as error:
+            st.error(str(error))
+
+
+        
 # 9 Account Closure
 elif choice == 'Account Closure':
     st.subheader('Account Closure')
 
-    # get customer id
-    customer_id =st.number_input(
-        'Enter Customer ID:',
-        min_value=101,
-        step=1
-    )
+    if not bank.accounts:
+        st.warning("Please create a bank account first.")
+
+    else:
+        # Select the account number
+        account_number = st.selectbox(
+            "Select Account Number:",
+            list(bank.accounts.keys()),
+            key="closure_account" )
+
 
     # confirm account closure
     confirm_closure=st.checkbox(
@@ -382,7 +451,12 @@ elif choice == 'Account Closure':
         if not confirm_closure:
             st.error('Please confirm before closing the account.')
         else:
-            st.success('Account closure request submitted successfully!')
+            try:
+                result = bank.close_account(account_number)
+                st.success(result)
+                st.write("Closed Account Number:", account_number)
 
-            st.write('### Account Closure Details')
-            st.write('Customer ID:',int(customer_id))
+            except ValueError as error:
+                st.error(str(error))
+
+
