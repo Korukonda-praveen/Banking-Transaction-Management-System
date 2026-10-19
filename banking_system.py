@@ -13,14 +13,21 @@ from bank import Bank  # Import the backend Bank class
 if "registered_customer_id" not in st.session_state: # Check whether the registered customer ID variable exists
     st.session_state.registered_customer_id = None  # Set it to None because no customer has been registered yet
 
-# Streamlit user interface
+# Function to navigate to Customer Registration
+def go_to_customer_registration():
+    st.session_state.module_menu = "Customer Registration"
 
-st.title("🏦 Banking Transaction Management System") # Create a bank object if it doesn't already exist
+# Navigate to the Account Creation module
+def go_to_account_creation():
+    st.session_state.module_menu = "Account Creation"
 
 if 'bank' not in st.session_state: # Initialize the Bank in session state so it doesn't reset on every click
       st.session_state.bank= Bank()
 
 bank=st.session_state.bank # Use st.session_state.bank instead of just 'bank' throughout your code
+
+# Streamlit user interface
+st.title("🏦 Banking Transaction Management System") # Create a bank object if it doesn't already exist
 menu=[
     "Home",
     "Customer Registration",
@@ -33,17 +40,21 @@ menu=[
     "Transaction History",
     "Account Closure"
 ]
+
 if "module_menu" not in st.session_state:
 # Check whether the current module menu exists
     st.session_state.module_menu = "Home"  # Set Home as the default module when the application starts
 
+
 if "next_module" not in st.session_state:  # Check whether the next module variable exists
-    st.session_state.next_module='Home'    # Set Home as the default next module
+    st.session_state.next_module=None    # Set Home as the default next module
+
 
 if st.session_state.next_module is not None: # Check whether a next module has been selected
     st.session_state.module_menu = st.session_state.next_module    # Change the current module to the selected next module
     st.session_state.next_module = None 
     # Reset the next module to None to avoid repeating the navigation
+
 
 choice = st.sidebar.selectbox(
     "Select Module",
@@ -52,14 +63,65 @@ choice = st.sidebar.selectbox(
 )
 
 
+
 # Home Page
 if choice == 'Home':
-    st.subheader('Welcome to the Banking Transaction Management System.')
+    st.title('🏦 Welcome to Digital Banking') #Display the welcome heading
+    # Display a short instroduction
     st.write(
-        "This application helps users manage basic banking \n "
-        "operations through a simple and user-friendly interface.\n\n"
-        "Select a banking module from the sidebar to get started."
+        'Welcome to the Banking Transaction Management System!'
+        'Manage customers,accounts and transactions in one place'
     )
+    st.divider()
+
+    # Dispaly project information
+    st.subheader('📌 About Our Project')
+
+    st.write(
+        'This project is developed using Python and Streamlit.'
+        'It demonstrates object-oriented programming,Validation,'
+        'Exception handling and banking operations'
+    )
+
+    st.divider()
+
+    # Display available banking services
+    st.subheader('💳 Our Banking Services')
+
+    # create two columns to display the services
+    col1,col2=st.columns(2)
+
+    # Display the first three serives in the first column
+    with col1:
+        st.info('👤 Customer Registration')
+        st.info('🏦 Account Creation')
+        st.info('💰 Deposit and Withdrawal')
+
+    # Display the remaining services in the second column
+    with col2:
+        st.info('🔁 Fund Transfer')
+        st.info('📊 Balance Enquiry')
+        st.info('📜 Transaction History')
+        st.info('🚪 Account Closure')
+
+    st.divider()
+
+    # Display a remider message
+    st.success(
+        'Ready to mange your banking operations..?'
+        'Click the button below to get started'
+    )
+
+    # Create the get started button
+    if st.button('🚀 Get Started',type='primary',on_click=go_to_customer_registration):
+
+        st.rerun() # Refresh the page to open Customer Registration
+     # Display the project technologies
+    
+    st.caption(
+        "Developed using Python | Streamlit | Object-Oriented Programming"
+    )
+
 
 # 1.Customer Registration
 elif choice =="Customer Registration":
@@ -113,10 +175,11 @@ elif choice =="Customer Registration":
         st.write("Phone:", customer._phone)
         st.write("Email:", customer._Customer__email)
 
-        # Proceed to Account Creation
-        if st.button("Proceed to Account Creation"):
-            st.session_state.next_module = "Account Creation" #request for the next process
-            st.rerun() #Run the script again from the top
+        # Create the Proceed to Account Creation button
+        st.button("➡️ Proceed to Account Creation",type="primary",on_click=go_to_account_creation)
+
+
+
 
 
 # 2. Account Creation
@@ -179,6 +242,10 @@ elif choice == "Account Creation":
                 except ValueError as error:
                     st.error(str(error))  
 
+
+
+
+
 # 3 Deposit
 elif choice=='Deposit':
     st.subheader('Deposit')
@@ -225,6 +292,7 @@ elif choice=='Deposit':
 
 
 
+
 # 4 Withdrawal
 elif choice == "Withdrawal":
     st.header('Withdrawal')
@@ -264,6 +332,9 @@ elif choice == "Withdrawal":
                 st.error(str(error)) 
 
 
+
+
+
 # 5 Fund Transfer
 elif choice =='Fund Transfer':
     st.header('Fund Transfer')
@@ -292,9 +363,6 @@ elif choice =='Fund Transfer':
             receiver_options,
             key="receiver_account"
         )
-
-
-
       
     # get transfer amount
     transfer_amount=st.number_input(
@@ -325,6 +393,9 @@ elif choice =='Fund Transfer':
         except ValueError as error:
                 st.error(str(error))
 
+
+
+
 # 6 Balance Enquiry
 elif choice== 'Balance Enquiry':
     st.subheader('Balance Enquiry') 
@@ -340,8 +411,6 @@ elif choice== 'Balance Enquiry':
             key="balance_account" )# Give this input box a unique name
        
 
-
-
     # Check account balance
     if st.button('Check Balance'):
         try:
@@ -354,6 +423,8 @@ elif choice== 'Balance Enquiry':
 
         except ValueError as error:
             st.error(str(error))
+
+
 
 
 # 7 Minimum Balance Validation
@@ -388,6 +459,10 @@ elif choice =='Minimum Balance Validation':
 
             except ValueError as error:
                 st.error(str(error))
+
+
+
+
 
 # 8 Transaction History
 elif choice == 'Transaction History':
@@ -427,6 +502,8 @@ elif choice == 'Transaction History':
             st.error(str(error))
 
 
+
+   
         
 # 9 Account Closure
 elif choice == 'Account Closure':
