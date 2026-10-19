@@ -22,7 +22,7 @@ def go_to_account_creation():
     st.session_state.module_menu = "Account Creation"
 
 if 'bank' not in st.session_state: # Initialize the Bank in session state so it doesn't reset on every click
-      st.session_state.bank= Bank()
+    st.session_state.bank= Bank()
 
 bank=st.session_state.bank # Use st.session_state.bank instead of just 'bank' throughout your code
 
