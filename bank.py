@@ -82,6 +82,10 @@ class Account:
         if amount<=0: # it check the deposut amount is positive or not
             raise ValueError('Deposit amount must be greater than zero.')
         self.__balance += amount #it the deposit amount to the current balance
+         # Record the successful deposit in transaction history
+        self.transaction_history.append(
+            f"Deposited: ₹{amount:.2f} | Balance: ₹{self.__balance:.2f}"
+        )
         return self.__balance #it updated the balance
 
     # Create a method to withdraw money
@@ -99,6 +103,12 @@ class Account:
             raise ValueError('Minimum balance of ₹1,000 must be maintained.')
 
         self.__balance -=amount #subtract the amount from the balance
+        
+        # Record the successful withdrawal in transaction history
+        self.transaction_history.append(
+            f"Withdrawn: ₹{amount:.2f} | Balance: ₹{self.__balance:.2f}"
+        )
+
 
         return self.__balance # it updated the balance
 
