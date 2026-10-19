@@ -134,7 +134,7 @@ class Bank:
      # 1. Customer Registration
     def register_customer(self,name,phone,email):
 
-        # Generate a customer ID with three digits
+        # Generate a customer ID such as CUST001
         customer_id=f'Cust{self.next_customer_id:03d}'
 
         # create a customer object
@@ -164,14 +164,15 @@ class Bank:
 
         # Generate the next account number
         account_number=self.next_account_number
-        
         # Create the correct account type
+        
         if account_type == "Savings Account":
             account = SavingsAccount(
                 account_number, customer_id, initial_deposit)
         elif account_type == "Current Account":
             account = CurrentAccount(
                 account_number, customer_id, initial_deposit)
+
 
         self.accounts[account_number]=account #stores the account in the bank's account dictionary
 
@@ -207,7 +208,7 @@ class Bank:
         return updated_balance   # Return the account balance after withdrawing the money
 
     # 5. Fund Transfer
-    def Transfer(self,sender_account, receiver_account,amount):
+    def transfer_funds(self,sender_account, receiver_account,amount):
 
         # Check whether the sender's account exists
         if sender_account not in self.accounts:
@@ -221,10 +222,18 @@ class Bank:
         if sender_account==receiver_account:
             raise ValueError('Cannot transfer money to the same account.')
 
+          # Check whether the transfer amount is positive
+        if amount <= 0:
+         raise ValueError("Transfer amount must be greater than zero.")
+
         # Get the sender's account object
         sender=self.accounts[sender_account]
         # Get the receiver's account object
         receiver=self.accounts[receiver_account]
+
+        # Check whether the sender has enough money
+        if amount > sender.get_balance():
+            raise ValueError("Insufficient account balance.")
 
         #withdraw money from the sender account
         sender.withdraw(amount)
