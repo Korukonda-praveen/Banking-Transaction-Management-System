@@ -202,6 +202,12 @@ class Bank:
         # Load transaction histories
         self.load_transactions()
 
+        # Update the next account number using active and closed accounts
+        all_account_numbers = list(self.accounts.keys()) + list(self.closed_accounts.keys())
+
+        if all_account_numbers:
+            self.next_account_number = max(all_account_numbers) + 1
+
 
      # 1. Customer Registration
     def register_customer(self,name,phone,email):
@@ -462,77 +468,98 @@ class Bank:
                 )
 
 
+   
+# Load customer details from the TXT file
+
     # Load customer details from the TXT file
     def load_customers(self):
 
         # Open the customer file
-        with open(self.customers_file, "r",encoding="utf-8") as file:
+        with open(self.customers_file, "r", encoding="utf-8") as file:
 
             # Read each line from the file
             for line in file:
 
+                # Remove extra spaces and newline characters
+                line = line.strip()
+
+                # Skip empty lines
+                if not line:
+                    continue
+
                 # Split customer details
-                customer_id, name, phone, email = line.strip().split("|", 3)
+                details = line.split("|")
+
+                # Skip records that do not have four fields
+                if len(details) != 4:
+                    print(f"Skipping invalid customer record: {line}")
+                    continue
+
+                # Store the four customer details
+                customer_id, name, phone, email = details
 
                 # Create a customer object
                 customer = Customer(customer_id, name, phone, email)
 
-                # Store the customer details
+                # Store the customer in the dictionary
                 self.customers[customer_id] = customer
 
-         # Check whether any customers are registered
+        # Set the next customer ID
         if self.customers:
-
-            # Get the highest customer ID, such as Cust003
-            last_customer_id = max(self.customers)
-
-            # Extract the number and set the next customer ID
+            last_customer_id = max(
+                self.customers,
+                key=lambda customer_id: int(customer_id[4:])
+            )
             self.next_customer_id = int(last_customer_id[4:]) + 1
 
 
-    
+  
     # Load account details from the TXT file
     def load_accounts(self):
 
         # Open the account file
-        with open(self.accounts_file, "r",encoding="utf-8") as file:
+        with open(self.accounts_file, "r", encoding="utf-8") as file:
 
             # Read each account record
             for line in file:
 
-                # Split account details
-                account_number, customer_id, account_type, balance = line.strip().split("|", 3)
+                # Remove spaces and newline characters
+                line = line.strip()
 
-                # Convert account number and balance to numbers
+                # Skip empty lines
+                if not line:
+                    continue
+
+                # Split account details
+                details = line.split("|")
+
+                # Skip invalid records
+                if len(details) != 4:
+                    print(f"Skipping invalid account record: {line}")
+                    continue
+
+                # Store account details
+                account_number, customer_id, account_type, balance = details
+
+                # Convert values into numbers
                 account_number = int(account_number)
                 balance = float(balance)
 
                 # Create the correct account object
                 if account_type == "Savings Account":
                     account = SavingsAccount(account_number, customer_id, balance)
-                else:
+                elif account_type == "Current Account":
                     account = CurrentAccount(account_number, customer_id, balance)
+                else:
+                    print(f"Skipping unknown account type: {account_type}")
+                    continue
 
-                # Clear the default history before loading saved transactions
+                # Clear default history before loading saved transactions
                 account.transaction_history = []
-                
-                # Store the account in the dictionary
+
+                # Store the active account
                 self.accounts[account_number] = account
-        
-        
-        # Set the starting account number
-        self.next_account_number = 1001
 
-        # Check active accounts
-        if self.accounts:
-            self.next_account_number = max(self.accounts) + 1
-
-        # Check closed accounts
-        if self.closed_accounts:
-            self.next_account_number = max(
-                self.next_account_number,
-                max(self.closed_accounts) + 1
-            )
 
 
 
