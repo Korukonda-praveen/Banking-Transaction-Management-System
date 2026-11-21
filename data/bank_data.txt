@@ -1,0 +1,11 @@
+C|Cust001|Aarav Sharma|9876543210|aarav.sharma@example.com
+C|Cust002|Meera Nair|919845012345|meera.nair@example.com
+C|Cust003|Meera Nair|919845012345|meera.nair@example.com
+C|Cust004|Aarav Sharma|9876543210|aarav.sharma@example.com
+X|1001|Cust001|Savings Account|0.00
+X|1002|Cust002|Savings Account|0.00
+T|1001|Opening Deposit: Rs.1000.00 | Balance: Rs.1000.00
+T|1001|Deposited: Rs.500.00 | Balance: Rs.1500.00
+T|1001|Simulated settlement payout: Rs.1500.00
+T|1002|Opening Deposit: Rs.1000.00 | Balance: Rs.1000.00
+T|1002|Simulated settlement payout: Rs.1000.00
